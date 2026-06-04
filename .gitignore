@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Logs
+logs/*.log
+logs/access.jsonl
+cloudflared.log
+tunnel.log
+
+# PIDs
+.pids/
+
+# Tunnel files
+.tunnel_url
+.tunnel_token
+.cloudflared-credentials.json
+
+# OS
+.DS_Store
+Thumbs.db
+*.exe
+!cloudflared.exe
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Config (keep local)
+config.yml

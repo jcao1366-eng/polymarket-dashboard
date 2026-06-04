@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymarket 交易面板</title>
+<script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2333;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--purple:#bc8cff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header h1{font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px}
+.header h1 .icon{font-size:24px}
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.action-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.action-btn:hover{border-color:var(--accent);color:var(--accent)}
+.action-btn .ico{font-size:16px}
+.wallet-badge{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.wallet-badge:hover{opacity:.85}
+.wallet-badge.connected{background:rgba(63,185,80,.15);color:var(--green)}
+.wallet-badge.disconnected{background:rgba(248,81,73,.15);color:var(--red)}
+.wallet-badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.search-section{padding:20px 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+.search-box{display:flex;gap:10px;max-width:800px;margin:0 auto}
+.search-box input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 16px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+.search-box input:focus{border-color:var(--accent)}
+.search-box input::placeholder{color:var(--text2)}
+.search-box button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.search-box button:hover{opacity:.85}
+.tabs{display:flex;gap:0;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto}
+.tab{padding:12px 20px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.content{padding:20px 24px;max-width:1400px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.market-table{width:100%;border-collapse:collapse}
+.market-table th{text-align:left;padding:10px 12px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.market-table td{padding:12px;font-size:14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.market-table tr:hover td{background:var(--surface)}
+.market-table .question{font-weight:600;max-width:500px;cursor:pointer}
+.market-table .question:hover{color:var(--accent)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600}
+.badge-yes{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-no{background:rgba(248,81,73,.15);color:var(--red)}
+.volume{font-variant-numeric:tabular-nums;color:var(--text2)}
+.btn-trade{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:opacity .2s}
+.btn-buy{background:var(--green);color:#000}
+.btn-sell{background:var(--red);color:#fff}
+.btn-trade:hover{opacity:.85}
+.orderbook-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.orderbook-panel h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text2)}
+.ob-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;font-variant-numeric:tabular-nums}
+.ob-row.bid{color:var(--green)}
+.ob-row.ask{color:var(--red)}
+.trade-form{max-width:500px}
+.trade-form h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:14px;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.side-toggle{display:flex;gap:8px}
+.side-toggle button{flex:1;padding:10px;border-radius:6px;font-size:14px;font-weight:700;border:2px solid transparent;cursor:pointer;transition:all .2s;background:var(--bg);color:var(--text2)}
+.side-toggle button.active-buy{border-color:var(--green);color:var(--green);background:rgba(63,185,80,.1)}
+.side-toggle button.active-sell{border-color:var(--red);color:var(--red);background:rgba(248,81,73,.1)}
+.btn-submit{width:100%;padding:12px;border-radius:8px;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-top:8px}
+.btn-submit.buy{background:var(--green);color:#000}
+.btn-submit.sell{background:var(--red);color:#fff}
+.btn-submit:hover{opacity:.9}
+.btn-submit:disabled{opacity:.4;cursor:not-allowed}
+.data-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:10px;overflow:hidden}
+.data-table th{text-align:left;padding:12px;font-size:12px;color:var(--text2);text-transform:uppercase;background:var(--surface2);font-weight:600}
+.data-table td{padding:12px;font-size:14px;border-bottom:1px solid var(--border)}
+.toast-container{position:fixed;top:80px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;animation:slideIn .3s ease;max-width:400px}
+.toast.success{background:rgba(63,185,80,.9);color:#fff}
+.toast.error{background:rgba(248,81,73,.9);color:#fff}
+.toast.info{background:rgba(88,166,255,.9);color:#fff}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.loading{text-align:center;padding:40px;color:var(--text2)}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.stat-card .label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase}
+.stat-card .value{font-size:24px;font-weight:700;margin-top:4px}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.red{color:var(--red)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:520px;width:90%;max-height:85vh;overflow-y:auto;transform:translateY(20px);transition:transform .2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal h2{font-size:20px;font-weight:700;margin-bottom:8px}
+.modal .subtitle{color:var(--text2);font-size:14px;margin-bottom:24px}
+.modal .form-group{margin-bottom:18px}
+.modal .form-group input,.modal .form-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-size:14px;outline:none;font-family:inherit}
+.modal .form-group textarea{resize:vertical;min-height:60px}
+.modal .form-group input:focus,.modal .form-group textarea:focus{border-color:var(--accent)}
+.modal .form-group .hint{font-size:12px;color:var(--text2);margin-top:6px}
+.modal .form-group .warn{font-size:12px;color:var(--yellow);margin-top:6px}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn-primary:hover{opacity:.85}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-danger{background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn-danger:hover{opacity:.85}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--text2)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+.wallet-info{background:var(--bg);border-radius:10px;padding:16px;margin-bottom:20px}
+.wallet-info .addr{font-family:monospace;font-size:13px;color:var(--accent);word-break:break-all}
+.wallet-info .balance{font-size:20px;font-weight:700;margin-top:8px}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-dot.green{background:var(--green)}
+.status-dot.red{background:var(--red)}
+.status-dot.yellow{background:var(--yellow)}
+@media(max-width:768px){.detail-grid{grid-template-columns:1fr}.search-box{flex-direction:column}.content{padding:12px}.header{padding:12px 16px;flex-wrap:wrap}.header-actions{gap:6px}}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1><span class="icon">&#x1F3B0;</span> <span data-i18n="title">Polymarket 交易面板</span></h1>
+  <div class="header-actions">
+    <button class="action-btn" id="lang-toggle" onclick="toggleLang()">
+      <span class="ico" id="lang-flag">&#x1F1FA;&#x1F1F8;</span>
+      <span id="lang-label">EN</span>
+    </button>
+    <div class="wallet-badge disconnected" id="wallet-badge" onclick="openWalletModal()">
+      <span class="dot"></span>
+      <span id="wallet-text" data-i18n="wallet_not_configured">钱包未配置</span>
+    </div>
+    <button class="action-btn" onclick="openWalletModal()">
+      <span class="ico">&#x1F511;</span>
+      <span data-i18n="wallet_settings">钱包设置</span>
+    </button>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="search-section">
+  <div class="search-box">
+    <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="搜索市场... 例如 bitcoin, trump, taiwan" />
+    <button onclick="doSearch()" data-i18n="search_btn">搜索</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="trending" onclick="switchTab('trending')" data-i18n="tab_trending">热门市场</div>
+  <div class="tab" data-tab="positions" onclick="switchTab('positions')" data-i18n="tab_positions">持仓</div>
+  <div class="tab" data-tab="orders" onclick="switchTab('orders')" data-i18n="tab_orders">挂单</div>
+</div>
+
+<!-- Content -->
+<div class="content">
+  <div class="tab-panel active" id="panel-trending">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div id="market-list"><div class="loading"><div class="spinner"></div><br><span data-i18n="loading_markets">正在加载市场数据...</span></div></div>
+  </div>
+  <div class="tab-panel" id="panel-positions">
+    <div id="positions-list"><div class="loading"><div class="spinner"></div><br><span data-i18n="loading">正在加载...</span></div></div>
+  </div>
+  <div class="tab-panel" id="panel-orders">
+    <div id="orders-list"><div class="loading"><div class="spinner"></div><br><span data-i18n="loading">正在加载...</span></div></div>
+  </div>
+</div>
+
+<!-- Wallet Modal -->
+<div class="modal-overlay" id="wallet-modal">
+  <div class="modal">
+    <h2 data-i18n="wallet_settings">钱包设置</h2>
+    <p class="subtitle" data-i18n="wallet_subtitle">导入 Polygon 钱包私钥以启用交易功能。私钥仅存储在本地浏览器中，不会发送至任何服务器。</p>
+
+    <!-- Wallet Status -->
+    <div id="wallet-status-area" style="margin-bottom:20px">
+      <div class="wallet-info" id="wallet-connected-info" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="status-dot green"></span>
+          <strong data-i18n="wallet_connected">钱包已连接</strong>
+        </div>
+        <div style="font-size:12px;color:var(--text2)" data-i18n="wallet_address">地址</div>
+        <div class="addr" id="wallet-addr-display">—</div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text2)">USDC Balance</div>
+        <div class="balance green" id="wallet-balance-display">—</div>
+      </div>
+      <div id="wallet-disconnected-info">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="status-dot red"></span>
+          <span data-i18n="wallet_not_configured" style="color:var(--red)">钱包未配置</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Form -->
+    <div id="wallet-import-form">
+      <div class="form-group">
+        <label data-i18n="private_key_label">钱包私钥</label>
+        <textarea id="input-private-key" placeholder="0x... 或 64位十六进制字符串" rows="3"></textarea>
+        <div class="warn" data-i18n="private_key_warn">&#x26A0;&#xFE0F; 私钥仅保存在浏览器本地，请勿在不安全的设备上使用</div>
+      </div>
+      <div class="form-group">
+        <label data-i18n="encrypt_password">加密密码</label>
+        <input type="password" id="input-encrypt-pw" placeholder="用于加密存储私钥的密码" />
+        <div class="hint" data-i18n="encrypt_hint">下次打开页面时需要输入此密码解锁钱包</div>
+      </div>
+    </div>
+
+    <!-- Unlock Form (hidden by default) -->
+    <div id="wallet-unlock-form" style="display:none">
+      <div class="form-group">
+        <label data-i18n="unlock_password">输入密码解锁钱包</label>
+        <input type="password" id="input-unlock-pw" placeholder="请输入加密密码" />
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div id="wallet-actions-import">
+        <button class="btn-secondary" onclick="closeWalletModal()" data-i18n="cancel">取消</button>
+        <button class="btn-primary" onclick="doImportWallet()" id="btn-import" data-i18n="import_wallet">导入钱包</button>
+      </div>
+      <div id="wallet-actions-unlock" style="display:none">
+        <button class="btn-secondary" onclick="closeWalletModal()" data-i18n="cancel">取消</button>
+        <button class="btn-primary" onclick="doUnlockWallet()" data-i18n="unlock_wallet">解锁钱包</button>
+      </div>
+      <div id="wallet-actions-connected" style="display:none">
+        <button class="btn-danger" onclick="doDisconnectWallet()" data-i18n="disconnect_wallet">断开钱包</button>
+        <button class="btn-primary" onclick="closeWalletModal()" data-i18n="close">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// ======================== i18n ========================
+const I18N = {
+  zh: {
+    title:'Polymarket 交易面板',search_placeholder:'搜索市场... 例如 bitcoin, trump, taiwan',
+    search_btn:'搜索',tab_trending:'热门市场',tab_positions:'持仓',tab_orders:'挂单',
+    loading:'正在加载...',loading_markets:'正在加载市场数据...',
+    wallet_connected:'钱包已连接',wallet_not_configured:'钱包未配置',
+    wallet_settings:'钱包设置',wallet_subtitle:'导入 Polygon 钱包私钥以启用交易功能。私钥仅存储在本地浏览器中，不会发送至任何服务器。',
+    wallet_address:'地址',private_key_label:'钱包私钥',private_key_warn:'\u26A0\uFE0F 私钥仅保存在浏览器本地，请勿在不安全的设备上使用',
+    encrypt_password:'加密密码',encrypt_hint:'下次打开页面时需要输入此密码解锁钱包',
+    unlock_password:'输入密码解锁钱包',import_wallet:'导入钱包',unlock_wallet:'解锁钱包',
+    disconnect_wallet:'断开钱包',cancel:'取消',close:'关闭',
+    back_to_markets:'\u2190 返回市场列表',order_book:'订单簿',
+    bids:'买入挂单 (Bids)',asks:'卖出挂单 (Asks)',place_order:'下单',
+    buy:'买入',sell:'卖出',limit_order:'限价单',market_order:'市价单',
+    price_label:'价格 (0.00 - 1.00)',size_label:'数量 (股)',
+    cost:'花费',revenue:'收入',price:'价格',size:'数量',
+    enter_price_size:'输入价格和数量查看汇总',fill_required:'请填写所有必填项',
+    confirm_order:'确认',order_submitted:'下单成功！',order_failed:'下单失败：',
+    cancel_btn:'撤单',cancel_confirm:'确认撤单',cancelled:'已撤单',cancel_failed:'撤单失败：',
+    no_markets:'未找到市场',no_positions:'暂无持仓',no_orders:'暂无挂单',
+    configure_wallet:'请先配置钱包',th_num:'#',th_market:'市场',
+    th_yes:'是',th_no:'否',th_volume:'总成交量',th_volume_24h:'24h成交量',
+    th_actions:'操作',th_outcome:'结果',th_avg_price:'均价',th_current:'现价',
+    th_pnl:'盈亏',th_id:'ID',th_side:'方向',th_type:'类型',th_status:'状态',
+    spread:'价差',mid:'中间价',search_failed:'搜索失败：',
+    load_failed:'加载失败：',detail_failed:'详情加载失败：',
+    markets_shown:'显示市场数',total_volume:'总成交量',avg_yes_prob:'平均Yes概率',
+    market:'市场',shares:'股',submit_buy:'提交买入单',submit_sell:'提交卖出单',
+    order_type:'订单类型',no_wallet_trade:'请先在设置中连接钱包',
+    wallet_locked:'钱包已锁定，请点击解锁',auth_success:'API密钥派生成功',
+    auth_failed:'API密钥派生失败',import_success:'钱包导入成功',
+    import_invalid:'私钥格式无效',unlock_failed:'密码错误或解密失败',
+    disconnect_confirm:'确认断开钱包？本地加密数据将被清除。',disconnected:'钱包已断开',
+    network_error:'网络错误，请检查连接',deriving_keys:'正在派生API密钥...',
+    importing:'正在导入...',unlocking:'正在解锁...',wallet_has_balance:'已有加密钱包，请解锁'
+  },
+  en: {
+    title:'Polymarket Trading Bot',search_placeholder:'Search markets... e.g. bitcoin, trump, taiwan',
+    search_btn:'Search',tab_trending:'Trending',tab_positions:'Positions',tab_orders:'Orders',
+    loading:'Loading...',loading_markets:'Loading markets...',
+    wallet_connected:'Wallet Connected',wallet_not_configured:'Wallet not configured',
+    wallet_settings:'Wallet Settings',wallet_subtitle:'Import your Polygon wallet private key to enable trading. Your key is stored locally in the browser only.',
+    wallet_address:'Address',private_key_label:'Private Key',private_key_warn:'\u26A0\uFE0F Key is stored locally only. Do not use on shared devices.',
+    encrypt_password:'Encryption Password',encrypt_hint:'You will need this password to unlock your wallet next time.',
+    unlock_password:'Enter password to unlock wallet',import_wallet:'Import Wallet',unlock_wallet:'Unlock Wallet',
+    disconnect_wallet:'Disconnect Wallet',cancel:'Cancel',close:'Close',
+    back_to_markets:'\u2190 Back to markets',order_book:'Order Book',
+    bids:'BIDS (Buy)',asks:'ASKS (Sell)',place_order:'Place Order',
+    buy:'BUY',sell:'SELL',limit_order:'Limit Order',market_order:'Market Order',
+    price_label:'Price (0.00 - 1.00)',size_label:'Size (shares)',
+    cost:'Cost',revenue:'Revenue',price:'Price',size:'Size',
+    enter_price_size:'Enter price and size to see summary.',fill_required:'Fill in all required fields',
+    confirm_order:'Confirm',order_submitted:'Order submitted!',order_failed:'Order failed: ',
+    cancel_btn:'Cancel',cancel_confirm:'Confirm cancel',cancelled:'Order cancelled',cancel_failed:'Cancel failed: ',
+    no_markets:'No markets found.',no_positions:'No open positions.',no_orders:'No open orders.',
+    configure_wallet:'Configure wallet in Settings first.',th_num:'#',th_market:'Market',
+    th_yes:'Yes',th_no:'No',th_volume:'Volume',th_volume_24h:'Vol 24h',
+    th_actions:'Actions',th_outcome:'Outcome',th_avg_price:'Avg Price',th_current:'Current',
+    th_pnl:'P&L',th_id:'ID',th_side:'Side',th_type:'Type',th_status:'Status',
+    spread:'Spread',mid:'Mid',search_failed:'Search failed: ',
+    load_failed:'Failed: ',detail_failed:'Failed to load detail: ',
+    markets_shown:'Markets Shown',total_volume:'Total Volume',avg_yes_prob:'Avg Yes Probability',
+    market:'Market',shares:'shares',submit_buy:'Place Buy Order',submit_sell:'Place Sell Order',
+    order_type:'Order Type',no_wallet_trade:'Connect wallet in Settings first.',
+    wallet_locked:'Wallet locked. Click to unlock.',auth_success:'API keys derived successfully',
+    auth_failed:'Failed to derive API keys',import_success:'Wallet imported successfully',
+    import_invalid:'Invalid private key format',unlock_failed:'Wrong password or decryption failed',
+    disconnect_confirm:'Disconnect wallet? Local encrypted data will be cleared.',disconnected:'Wallet disconnected',
+    network_error:'Network error, check connection',deriving_keys:'Deriving API keys...',
+    importing:'Importing...',unlocking:'Unlocking...',wallet_has_balance:'Encrypted wallet found, please unlock'
+  }
+};
+
+let currentLang = localStorage.getItem('polybot-lang') || 'zh';
+function t(k){ return (I18N[currentLang]&&I18N[currentLang][k])||k; }
+
+function applyLang(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(I18N[currentLang][k]) el.textContent=I18N[currentLang][k];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    const k=el.getAttribute('data-i18n-placeholder');
+    if(I18N[currentLang][k]) el.placeholder=I18N[currentLang][k];
+  });
+  const flag=document.getElementById('lang-flag');
+  const label=document.getElementById('lang-label');
+  if(currentLang==='zh'){flag.innerHTML='&#x1F1FA;&#x1F1F8;';label.textContent='EN';}
+  else{flag.innerHTML='&#x1F1E8;&#x1F1F3;';label.textContent='中文';}
+  document.title=t('title');
+}
+
+function toggleLang(){
+  currentLang=currentLang==='zh'?'en':'zh';
+  localStorage.setItem('polybot-lang',currentLang);
+  applyLang();
+  if(document.getElementById('panel-trending').classList.contains('active')) loadTrending();
+  if(document.getElementById('panel-positions').classList.contains('active')) loadPositions();
+  if(document.getElementById('panel-orders').classList.contains('active')) loadOrders();
+}
+
+// ======================== Crypto Helpers ========================
+async function hmacSha256(keyHex, message) {
+  const enc = new TextEncoder();
+  const keyBytes = hexToBytes(keyHex);
+  const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
+  return bytesToHex(new Uint8Array(sig));
+}
+
+function hexToBytes(hex){
+  const bytes=new Uint8Array(hex.length/2);
+  for(let i=0;i<hex.length;i+=2) bytes[i/2]=parseInt(hex.substr(i,2),16);
+  return bytes;
+}
+
+function bytesToHex(bytes){return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');}
+
+async function encryptAES(text, password){
+  const enc=new TextEncoder();
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const keyMaterial=await crypto.subtle.importKey('raw',enc.encode(password),{name:'PBKDF2'},false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['encrypt']);
+  const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(text));
+  const combined=new Uint8Array(salt.length+iv.length+new Uint8Array(encrypted).length);
+  combined.set(salt,0);combined.set(iv,salt.length);combined.set(new Uint8Array(encrypted),salt.length+iv.length);
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptAES(encryptedB64, password){
+  const enc=new TextEncoder();
+  const dec=new TextDecoder();
+  const combined=new Uint8Array(Array.from(atob(encryptedB64)).map(c=>c.charCodeAt(0)));
+  const salt=combined.slice(0,16);
+  const iv=combined.slice(16,28);
+  const data=combined.slice(28);
+  const keyMaterial=await crypto.subtle.importKey('raw',enc.encode(password),{name:'PBKDF2'},false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['decrypt']);
+  const decrypted=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
+  return dec.decode(decrypted);
+}
+
+function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16);});}
+
+// ======================== API Client ========================
+// All requests go through local proxy server (or same-origin API routes)
+// This means Chinese users don't need VPN - the server fetches from Polymarket
+
+const API_BASE = '';  // empty = same-origin (local proxy server)
+
+async function fetchTrending(limit = 25) {
+  const res = await fetch(`${API_BASE}/api/trending?limit=${limit}`);
+  return res.json();
+}
+
+async function searchMarkets(query) {
+  const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+  return res.json();
+}
+
+async function fetchOrderBook(tokenId) {
+  const res = await fetch(`${API_BASE}/api/book/${tokenId}`);
+  return res.json();
+}
+
+async function resolveMarket(slug) {
+  const res = await fetch(`${API_BASE}/api/resolve?slug=${encodeURIComponent(slug)}`);
+  const markets = await res.json();
+  if (!markets.length) return null;
+  const m = markets[0];
+  return {
+    market: m,
+    condition_id: m.conditionId || m.condition_id,
+    yes_token_id: m.clobTokenIds ? (typeof m.clobTokenIds === 'string' ? JSON.parse(m.clobTokenIds)[0] : m.clobTokenIds[0]) : null,
+    no_token_id: m.clobTokenIds ? (typeof m.clobTokenIds === 'string' ? JSON.parse(m.clobTokenIds)[1] : m.clobTokenIds[1]) : null,
+  };
+}
+
+// ======================== Wallet Manager ========================
+const walletState = {
+  privateKey: null,       // raw private key (in memory only)
+  wallet: null,           // ethers.Wallet instance
+  address: null,
+  apiKey: null,
+  apiSecret: null,
+  apiPassphrase: null,
+  isConnected: false,
+  isLocked: false,
+};
+
+function getStoredWalletFlag() {
+  return localStorage.getItem('polybot-wallet-encrypted') != null;
+}
+
+function updateWalletUI() {
+  const badge = document.getElementById('wallet-badge');
+  const text = document.getElementById('wallet-text');
+  if (walletState.isConnected && walletState.wallet) {
+    badge.className = 'wallet-badge connected';
+    const addr = walletState.address;
+    text.textContent = addr ? `${addr.slice(0,6)}...${addr.slice(-4)}` : t('wallet_connected');
+  } else if (getStoredWalletFlag()) {
+    badge.className = 'wallet-badge disconnected';
+    text.textContent = t('wallet_locked');
+  } else {
+    badge.className = 'wallet-badge disconnected';
+    text.textContent = t('wallet_not_configured');
+  }
+}
+
+async function deriveClobApiKeys() {
+  if (!walletState.wallet) throw new Error('No wallet');
+  const wallet = walletState.wallet;
+  const address = wallet.address;
+  const nonce = Date.now();
+  const nonceStr = String(nonce);
+  const signature = await wallet.signMessage(nonceStr);
+
+  const body = { nonce, signature, wallet: address };
+
+  const res = await fetch(`${API_BASE}/api/clob-derive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(`derive-api-key failed: ${res.status}`);
+  return res.json();
+}
+
+async function clobAuthHeaders(method, path, bodyStr = '') {
+  if (!walletState.apiKey) throw new Error('Not authenticated');
+  const timestamp = Math.floor(Date.now() / 1000);
+  const message = timestamp + method.toUpperCase() + path + (bodyStr || '');
+  const signature = await hmacSha256(walletState.apiSecret, message);
+  return {
+    'Content-Type': 'application/json',
+    'POLY_API_KEY': walletState.apiKey,
+    'POLY_SIGNATURE': signature,
+    'POLY_TIMESTAMP': String(timestamp),
+    'POLY_PASSPHRASE': walletState.apiPassphrase,
+  };
+}
+
+// ======================== Wallet Modal ========================
+function openWalletModal() {
+  const modal = document.getElementById('wallet-modal');
+  modal.classList.add('open');
+
+  const importForm = document.getElementById('wallet-import-form');
+  const unlockForm = document.getElementById('wallet-unlock-form');
+  const actionsImport = document.getElementById('wallet-actions-import');
+  const actionsUnlock = document.getElementById('wallet-actions-unlock');
+  const actionsConnected = document.getElementById('wallet-actions-connected');
+  const connectedInfo = document.getElementById('wallet-connected-info');
+  const disconnectedInfo = document.getElementById('wallet-disconnected-info');
+
+  if (walletState.isConnected) {
+    importForm.style.display = 'none';
+    unlockForm.style.display = 'none';
+    actionsImport.style.display = 'none';
+    actionsUnlock.style.display = 'none';
+    actionsConnected.style.display = 'flex';
+    connectedInfo.style.display = 'block';
+    disconnectedInfo.style.display = 'none';
+    document.getElementById('wallet-addr-display').textContent = walletState.address;
+    fetchWalletBalance();
+  } else if (getStoredWalletFlag()) {
+    importForm.style.display = 'none';
+    unlockForm.style.display = 'block';
+    actionsImport.style.display = 'none';
+    actionsUnlock.style.display = 'flex';
+    actionsConnected.style.display = 'none';
+    connectedInfo.style.display = 'none';
+    disconnectedInfo.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><span class="status-dot yellow"></span><span>${t('wallet_has_balance')}</span></div>`;
+    disconnectedInfo.style.display = 'block';
+  } else {
+    importForm.style.display = 'block';
+    unlockForm.style.display = 'none';
+    actionsImport.style.display = 'flex';
+    actionsUnlock.style.display = 'none';
+    actionsConnected.style.display = 'none';
+    connectedInfo.style.display = 'none';
+    disconnectedInfo.style.display = 'block';
+  }
+}
+
+function closeWalletModal() {
+  document.getElementById('wallet-modal').classList.remove('open');
+}
+
+async function doImportWallet() {
+  let pk = document.getElementById('input-private-key').value.trim();
+  const pw = document.getElementById('input-encrypt-pw').value;
+  if (!pk || !pw) { toast(t('fill_required'), 'error'); return; }
+
+  // Normalize key
+  if (pk.startsWith('0x')) pk = pk.slice(2);
+
+  // Validate
+  if (!/^[0-9a-fA-F]{64}$/.test(pk)) {
+    toast(t('import_invalid'), 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-import');
+  btn.disabled = true;
+  btn.textContent = t('importing');
+
+  try {
+    const fullKey = '0x' + pk;
+
+    // Encrypt and store
+    const encrypted = await encryptAES(fullKey, pw);
+    localStorage.setItem('polybot-wallet-encrypted', encrypted);
+
+    // Initialize wallet in memory
+    walletState.privateKey = fullKey;
+    walletState.wallet = new ethers.Wallet(fullKey);
+    walletState.address = walletState.wallet.address;
+
+    // Derive CLOB API keys
+    toast(t('deriving_keys'), 'info');
+    const creds = await deriveClobApiKeys();
+    walletState.apiKey = creds.apiKey;
+    walletState.apiSecret = creds.apiSecret;
+    walletState.apiPassphrase = creds.passphrase;
+    walletState.isConnected = true;
+    walletState.isLocked = false;
+
+    // Also store creds (not critical, can re-derive)
+    localStorage.setItem('polybot-clob-creds', JSON.stringify({apiKey:creds.apiKey, apiSecret:creds.apiSecret, passphrase:creds.passphrase}));
+
+    updateWalletUI();
+    toast(t('import_success'), 'success');
+    toast(t('auth_success'), 'success');
+    closeWalletModal();
+  } catch (e) {
+    console.error(e);
+    localStorage.removeItem('polybot-wallet-encrypted');
+    toast(t('auth_failed') + ' ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('import_wallet');
+  }
+}
+
+async function doUnlockWallet() {
+  const pw = document.getElementById('input-unlock-pw').value;
+  if (!pw) { toast(t('fill_required'), 'error'); return; }
+
+  try {
+    const encrypted = localStorage.getItem('polybot-wallet-encrypted');
+    const fullKey = await decryptAES(encrypted, pw);
+
+    walletState.privateKey = fullKey;
+    walletState.wallet = new ethers.Wallet(fullKey);
+    walletState.address = walletState.wallet.address;
+
+    // Try to load stored creds first
+    const storedCreds = localStorage.getItem('polybot-clob-creds');
+    if (storedCreds) {
+      const creds = JSON.parse(storedCreds);
+      walletState.apiKey = creds.apiKey;
+      walletState.apiSecret = creds.apiSecret;
+      walletState.apiPassphrase = creds.passphrase;
+    } else {
+      // Derive new creds
+      toast(t('deriving_keys'), 'info');
+      const creds = await deriveClobApiKeys();
+      walletState.apiKey = creds.apiKey;
+      walletState.apiSecret = creds.apiSecret;
+      walletState.apiPassphrase = creds.passphrase;
+      localStorage.setItem('polybot-clob-creds', JSON.stringify(creds));
+    }
+
+    walletState.isConnected = true;
+    walletState.isLocked = false;
+    updateWalletUI();
+    toast(t('auth_success'), 'success');
+    closeWalletModal();
+  } catch (e) {
+    console.error(e);
+    toast(t('unlock_failed'), 'error');
+  }
+}
+
+function doDisconnectWallet() {
+  if (!confirm(t('disconnect_confirm'))) return;
+  walletState.privateKey = null;
+  walletState.wallet = null;
+  walletState.address = null;
+  walletState.apiKey = null;
+  walletState.apiSecret = null;
+  walletState.apiPassphrase = null;
+  walletState.isConnected = false;
+  walletState.isLocked = false;
+  localStorage.removeItem('polybot-wallet-encrypted');
+  localStorage.removeItem('polybot-clob-creds');
+  updateWalletUI();
+  toast(t('disconnected'), 'info');
+  closeWalletModal();
+}
+
+async function fetchWalletBalance() {
+  if (!walletState.wallet) return;
+  try {
+    const provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com');
+    const balance = await provider.getBalance(walletState.address);
+    const ethBal = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
+    document.getElementById('wallet-balance-display').textContent = `${ethBal} MATIC`;
+
+    // Try to get USDC balance
+    const usdcAddr = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'; // USDC on Polygon
+    const abi = ['function balanceOf(address) view returns (uint256)'];
+    const contract = new ethers.Contract(usdcAddr, abi, provider);
+    const usdcBal = await contract.balanceOf(walletState.address);
+    const usdcFloat = parseFloat(ethers.utils.formatUnits(usdcBal, 6)).toFixed(2);
+    document.getElementById('wallet-balance-display').textContent = `${usdcFloat} USDC | ${ethBal} MATIC`;
+  } catch (e) {
+    document.getElementById('wallet-balance-display').textContent = '—';
+  }
+}
+
+// ======================== Trading Functions (Client-side) ========================
+async function placeOrder(slug, orderType, side, size, price) {
+  if (!walletState.isConnected) throw new Error(t('no_wallet_trade'));
+
+  // Resolve market
+  const resolved = await resolveMarket(slug);
+  if (!resolved) throw new Error('Market not found');
+
+  const tokenId = side === 'buy' ? resolved.yes_token_id : resolved.no_token_id;
+  if (!tokenId) throw new Error('Token ID not found');
+
+  const orderId = uuid();
+  const now = Date.now();
+  const orderBody = {
+    id: orderId,
+    market: resolved.condition_id,
+    asset_id: tokenId,
+    side: side.toUpperCase(),
+    price: String(price),
+    size: String(size),
+    type: orderType === 'market' ? 'FOK' : 'GTC',
+    creation_time: String(Math.floor(now / 1000)),
+  };
+
+  if (orderType === 'market') delete orderBody.price;
+
+  const bodyStr = JSON.stringify(orderBody);
+  const path = '/order';
+  const headers = await clobAuthHeaders('POST', path, bodyStr);
+
+  const res = await fetch(`${API_BASE}/api/clob-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: bodyStr });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  return res.json();
+}
+
+async function getPositions() {
+  if (!walletState.isConnected) throw new Error(t('no_wallet_trade'));
+  const headers = await clobAuthHeaders('GET', '/positions');
+  const res = await fetch(`${API_BASE}/api/positions`, { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function getOpenOrders() {
+  if (!walletState.isConnected) throw new Error(t('no_wallet_trade'));
+  const headers = await clobAuthHeaders('GET', '/orders');
+  const res = await fetch(`${API_BASE}/api/orders`, { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function cancelOrder(orderId) {
+  if (!walletState.isConnected) throw new Error(t('no_wallet_trade'));
+  const body = { orderID: orderId };
+  const bodyStr = JSON.stringify(body);
+  const headers = await clobAuthHeaders('POST', '/cancel', bodyStr);
+  const res = await fetch(`${API_BASE}/api/clob-cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: bodyStr });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ======================== State ========================
+let currentSide = 'buy';
+let currentMarket = null;
+let currentTokenId = null;
+
+// ======================== Init ========================
+document.addEventListener('DOMContentLoaded', () => {
+  applyLang();
+  updateWalletUI();
+  loadTrending();
+});
+
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// ======================== Toast ========================
+function toast(msg, type='info'){
+  const c=document.getElementById('toasts');
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.textContent=msg;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(),4000);
+}
+
+// ======================== Tabs ========================
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  if(tab==='positions') loadPositions();
+  if(tab==='orders') loadOrders();
+}
+
+// ======================== Trending ========================
+async function loadTrending(){
+  const c=document.getElementById('market-list');
+  c.innerHTML=`<div class="loading"><div class="spinner"></div><br>${t('loading_markets')}</div>`;
+  try{
+    const markets=await fetchTrending(30);
+    renderMarkets(markets);
+    renderStats(markets);
+  }catch(e){
+    c.innerHTML=`<p style="color:var(--red)">${t('search_failed')}${e.message}</p>`;
+  }
+}
+
+async function doSearch(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q){loadTrending();return;}
+  const c=document.getElementById('market-list');
+  c.innerHTML=`<div class="loading"><div class="spinner"></div><br>${t('loading')}</div>`;
+  try{
+    const markets=await searchMarkets(q);
+    renderMarkets(markets);
+  }catch(e){
+    c.innerHTML=`<p style="color:var(--red)">${t('search_failed')}${e.message}</p>`;
+  }
+}
+
+function renderMarkets(markets){
+  const c=document.getElementById('market-list');
+  if(!markets.length){c.innerHTML=`<p style="color:var(--text2)">${t('no_markets')}</p>`;return;}
+  let html=`<table class="market-table"><thead><tr>
+    <th>${t('th_num')}</th><th>${t('th_market')}</th><th>${t('th_yes')}</th><th>${t('th_no')}</th><th>${t('th_volume')}</th><th>${t('th_volume_24h')}</th><th>${t('th_actions')}</th>
+  </tr></thead><tbody>`;
+  markets.forEach((m,i)=>{
+    let prices=m.outcomePrices;
+    if(typeof prices==='string') prices=JSON.parse(prices);
+    const yesP=prices&&prices[0]?(parseFloat(prices[0])*100).toFixed(1):'—';
+    const noP=prices&&prices[1]?(parseFloat(prices[1])*100).toFixed(1):'—';
+    const vol=m.volume?('$'+formatNum(m.volume)):'—';
+    const vol24=m.volume24hr?('$'+formatNum(m.volume24hr)):'—';
+    const endDate=m.endDate?new Date(m.endDate).toLocaleDateString():'';
+    const slug=m.slug||m.id;
+    html+=`<tr>
+      <td style="color:var(--text2)">${i+1}</td>
+      <td class="question" onclick="showDetail('${slug}')" title="${escHtml(m.question||m.title||'')}">
+        ${escHtml((m.question||m.title||'').length>80?(m.question||m.title||'').slice(0,80)+'...':(m.question||m.title||''))}
+        ${endDate?`<br><span style="font-size:11px;color:var(--text2)">Ends: ${endDate}</span>`:''}
+      </td>
+      <td><span class="badge badge-yes">${yesP}%</span></td>
+      <td><span class="badge badge-no">${noP}%</span></td>
+      <td class="volume">${vol}</td>
+      <td class="volume">${vol24}</td>
+      <td>
+        <button class="btn-trade btn-buy" onclick="quickTrade('${slug}','buy')">${t('buy')}</button>
+        <button class="btn-trade btn-sell" onclick="quickTrade('${slug}','sell')">${t('sell')}</button>
+      </td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  c.innerHTML=html;
+}
+
+function renderStats(markets){
+  const totalVol=markets.reduce((s,m)=>s+(parseFloat(m.volume)||0),0);
+  const avgYes=markets.filter(m=>{let p=m.outcomePrices;if(typeof p==='string')p=JSON.parse(p);return p&&p[0];}).reduce((s,m)=>{let p=m.outcomePrices;if(typeof p==='string')p=JSON.parse(p);return s+parseFloat(p[0]);},0)/Math.max(markets.length,1);
+  document.getElementById('stats-bar').innerHTML=`
+    <div class="stat-card"><div class="label">${t('markets_shown')}</div><div class="value">${markets.length}</div></div>
+    <div class="stat-card"><div class="label">${t('total_volume')}</div><div class="value">$${formatNum(totalVol)}</div></div>
+    <div class="stat-card"><div class="label">${t('avg_yes_prob')}</div><div class="value ${avgYes>=.5?'green':'red'}">${(avgYes*100).toFixed(1)}%</div></div>
+  `;
+}
+
+// ======================== Market Detail ========================
+async function showDetail(slug){
+  const c=document.getElementById('market-list');
+  c.innerHTML=`<div class="loading"><div class="spinner"></div><br>${t('loading_markets')}</div>`;
+  try{
+    const resolved=await resolveMarket(slug);
+    if(!resolved) throw new Error('Market not found');
+    const market=resolved.market;
+    currentMarket=market;
+    currentTokenId=resolved.yes_token_id;
+
+    let book={bids:[],asks:[],spread:null,midpoint:null};
+    if(currentTokenId){
+      try{book=await fetchOrderBook(currentTokenId);}catch(e){console.warn('Book fetch failed',e);}
+    }
+
+    let prices=market.outcomePrices;
+    if(typeof prices==='string') prices=JSON.parse(prices);
+    const yesP=prices&&prices[0]?(parseFloat(prices[0])*100).toFixed(1):'—';
+    const noP=prices&&prices[1]?(parseFloat(prices[1])*100).toFixed(1):'—';
+    const maxBid=book.bids&&book.bids.length?Math.max(...book.bids.map(b=>parseFloat(b.size))):1;
+    const maxAsk=book.asks&&book.asks.length?Math.max(...book.asks.map(a=>parseFloat(a.size))):1;
+
+    let html=`
+      <div style="margin-bottom:16px"><a href="javascript:loadTrending()" style="color:var(--accent);cursor:pointer;font-size:13px">${t('back_to_markets')}</a></div>
+      <div class="stats-bar">
+        <div class="stat-card"><div class="label">${t('market')}</div><div class="value" style="font-size:16px">${escHtml(market.question||market.title||'')}</div></div>
+        <div class="stat-card"><div class="label">${t('th_yes')}</div><div class="value green">${yesP}%</div></div>
+        <div class="stat-card"><div class="label">${t('th_no')}</div><div class="value red">${noP}%</div></div>
+        <div class="stat-card"><div class="label">${t('total_volume')}</div><div class="value">$${formatNum(market.volume||0)}</div></div>
+      </div>
+      <div class="detail-grid">
+        <div class="orderbook-panel">
+          <h3>${t('order_book')}</h3>
+          <div style="margin-bottom:12px;font-weight:600;color:var(--text2);font-size:12px">${t('bids')}</div>`;
+
+    (book.bids||[]).slice(0,10).forEach(b=>{
+      const pct=(parseFloat(b.size)/maxBid*100).toFixed(0);
+      html+=`<div class="ob-row bid" style="background:linear-gradient(to right,transparent,rgba(63,185,80,.1) ${pct}%)"><span>${parseFloat(b.price).toFixed(2)}</span><span>${parseFloat(b.size).toLocaleString()}</span></div>`;
+    });
+
+    if(book.spread){
+      html+=`<div style="text-align:center;padding:8px;color:var(--yellow);font-size:12px;font-weight:600">${t('spread')}: ${book.spread} | ${t('mid')}: ${book.midpoint||'—'}</div>`;
+    }
+
+    html+=`<div style="margin:12px 0;font-weight:600;color:var(--text2);font-size:12px">${t('asks')}</div>`;
+    (book.asks||[]).slice(0,10).forEach(a=>{
+      const pct=(parseFloat(a.size)/maxAsk*100).toFixed(0);
+      html+=`<div class="ob-row ask" style="background:linear-gradient(to left,transparent,rgba(248,81,73,.1) ${pct}%)"><span>${parseFloat(a.price).toFixed(2)}</span><span>${parseFloat(a.size).toLocaleString()}</span></div>`;
+    });
+
+    html+=`</div>
+        <div class="orderbook-panel">
+          <h3>${t('place_order')}</h3>
+          <div class="trade-form">
+            <input type="hidden" id="trade-slug" value="${escHtml(market.slug||market.id)}" />
+            <div class="side-toggle">
+              <button id="btn-side-buy" class="active-buy" onclick="setSide('buy')">${t('buy')}</button>
+              <button id="btn-side-sell" onclick="setSide('sell')">${t('sell')}</button>
+            </div>
+            <div class="form-group" style="margin-top:14px">
+              <label>${t('order_type')}</label>
+              <select id="trade-type"><option value="limit">${t('limit_order')}</option><option value="market">${t('market_order')}</option></select>
+            </div>
+            <div class="form-group" id="price-group">
+              <label>${t('price_label')}</label>
+              <input type="number" id="trade-price" step="0.01" min="0.01" max="0.99" placeholder="0.50" />
+            </div>
+            <div class="form-group">
+              <label>${t('size_label')}</label>
+              <input type="number" id="trade-size" step="1" min="1" placeholder="100" />
+            </div>
+            <div id="trade-summary" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--text2)"></div>
+            <button class="btn-submit buy" id="btn-submit" onclick="submitTrade()">${t('submit_buy')}</button>
+          </div>
+        </div>
+      </div>`;
+
+    c.innerHTML=html;
+
+    if(book.asks&&book.asks.length) document.getElementById('trade-price').value=parseFloat(book.asks[0].price).toFixed(2);
+    else if(book.bids&&book.bids.length) document.getElementById('trade-price').value=parseFloat(book.bids[0].price).toFixed(2);
+
+    updateSummary();
+  }catch(e){
+    c.innerHTML=`<p style="color:var(--red)">${t('detail_failed')}${e.message}</p>`;
+  }
+}
+
+function setSide(side){
+  currentSide=side;
+  document.getElementById('btn-side-buy').className=side==='buy'?'active-buy':'';
+  document.getElementById('btn-side-sell').className=side==='sell'?'active-sell':'';
+  const sb=document.getElementById('btn-submit');
+  sb.className=`btn-submit ${side}`;
+  sb.textContent=side==='buy'?t('submit_buy'):t('submit_sell');
+}
+
+document.addEventListener('input',e=>{if(['trade-price','trade-size'].includes(e.target.id))updateSummary();});
+
+function updateSummary(){
+  const el=document.getElementById('trade-summary');
+  if(!el)return;
+  const price=parseFloat(document.getElementById('trade-price')?.value||0);
+  const size=parseFloat(document.getElementById('trade-size')?.value||0);
+  if(price&&size){
+    const label=currentSide==='buy'?t('cost'):t('revenue');
+    el.innerHTML=`<strong>${label}:</strong> $${(price*size).toFixed(2)} USDC<br><strong>${t('price')}:</strong> ${price.toFixed(2)} | <strong>${t('size')}:</strong> ${size} ${t('shares')}`;
+  }else{
+    el.innerHTML=t('enter_price_size');
+  }
+}
+
+// ======================== Trade ========================
+async function submitTrade(){
+  if(!walletState.isConnected){toast(t('no_wallet_trade'),'error');openWalletModal();return;}
+  const slug=document.getElementById('trade-slug')?.value;
+  const type=document.getElementById('trade-type')?.value;
+  const price=parseFloat(document.getElementById('trade-price')?.value);
+  const size=parseFloat(document.getElementById('trade-size')?.value);
+  if(!slug||!size||(type==='limit'&&!price)){toast(t('fill_required'),'error');return;}
+  if(!confirm(`${t('confirm_order')}: ${currentSide.toUpperCase()} ${size} ${type} ${currentLang==='zh'?'单':'order'}${price?' @ '+price:''}?`))return;
+  try{
+    await placeOrder(slug,type,currentSide,size,price);
+    toast(t('order_submitted'),'success');
+  }catch(e){toast(`${t('order_failed')}${e.message}`,'error');}
+}
+
+function quickTrade(slug,side){currentSide=side;showDetail(slug);setTimeout(()=>setSide(side),100);}
+
+// ======================== Positions ========================
+async function loadPositions(){
+  const c=document.getElementById('positions-list');
+  c.innerHTML=`<div class="loading"><div class="spinner"></div><br>${t('loading')}</div>`;
+  if(!walletState.isConnected){c.innerHTML=`<p style="color:var(--yellow)">${t('no_wallet_trade')}</p><p style="color:var(--text2);margin-top:8px">${t('configure_wallet')}</p>`;return;}
+  try{
+    const data=await getPositions();
+    if(!data||!data.length){c.innerHTML=`<p style="color:var(--text2)">${t('no_positions')}</p>`;return;}
+    let html=`<table class="data-table"><thead><tr><th>${t('th_market')}</th><th>${t('th_outcome')}</th><th>${t('size')}</th><th>${t('th_avg_price')}</th><th>${t('th_current')}</th><th>${t('th_pnl')}</th></tr></thead><tbody>`;
+    data.forEach(p=>{
+      const pnl=parseFloat(p.pnl||p.totalPnl||0);
+      html+=`<tr>
+        <td>${p.title||p.market||'—'}</td><td>${p.outcome||'Yes'}</td>
+        <td>${parseFloat(p.size||p.curBalance||0).toFixed(2)}</td><td>${p.avgPrice||'—'}</td><td>${p.currentPrice||'—'}</td>
+        <td style="color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</td>
+      </tr>`;
+    });
+    html+='</tbody></table>';c.innerHTML=html;
+  }catch(e){c.innerHTML=`<p style="color:var(--red)">${t('load_failed')}${e.message}</p>`;}
+}
+
+// ======================== Orders ========================
+async function loadOrders(){
+  const c=document.getElementById('orders-list');
+  c.innerHTML=`<div class="loading"><div class="spinner"></div><br>${t('loading')}</div>`;
+  if(!walletState.isConnected){c.innerHTML=`<p style="color:var(--yellow)">${t('no_wallet_trade')}</p><p style="color:var(--text2);margin-top:8px">${t('configure_wallet')}</p>`;return;}
+  try{
+    const data=await getOpenOrders();
+    if(!data||!data.length){c.innerHTML=`<p style="color:var(--text2)">${t('no_orders')}</p>`;return;}
+    let html=`<table class="data-table"><thead><tr><th>${t('th_id')}</th><th>${t('th_market')}</th><th>${t('th_side')}</th><th>${t('th_type')}</th><th>${t('price')}</th><th>${t('size')}</th><th>${t('th_status')}</th><th></th></tr></thead><tbody>`;
+    data.forEach(o=>{
+      const sc=(o.side||'').toUpperCase()==='BUY'?'var(--green)':'var(--red)';
+      html+=`<tr>
+        <td style="font-size:11px;color:var(--text2)">${(o.id||o.orderId||'').slice(0,16)}...</td>
+        <td>${o.market||o.asset||'—'}</td><td style="color:${sc};font-weight:600">${o.side||'—'}</td>
+        <td>${o.type||o.orderType||'GTC'}</td><td>${o.price||'—'}</td><td>${o.original_size||o.size||'—'}</td>
+        <td style="color:var(--yellow)">${o.status||'open'}</td>
+        <td><button class="btn-trade btn-sell" onclick="doCancelOrder('${o.id||o.orderId||''}')">${t('cancel_btn')}</button></td>
+      </tr>`;
+    });
+    html+='</tbody></table>';c.innerHTML=html;
+  }catch(e){c.innerHTML=`<p style="color:var(--red)">${t('load_failed')}${e.message}</p>`;}
+}
+
+async function doCancelOrder(orderId){
+  if(!confirm(`${t('cancel_confirm')} ${orderId.slice(0,16)}...?`))return;
+  try{await cancelOrder(orderId);toast(t('cancelled'),'success');loadOrders();}
+  catch(e){toast(`${t('cancel_failed')}${e.message}`,'error');}
+}
+
+// ======================== Utils ========================
+function formatNum(n){if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toLocaleString();}
+function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// Close modal on overlay click
+document.getElementById('wallet-modal').addEventListener('click',function(e){if(e.target===this)closeWalletModal();});
+</script>
+</body>
+</html>

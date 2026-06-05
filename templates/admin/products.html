@@ -6,31 +6,80 @@
     <title>Products - Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 min-h-screen">
     <nav class="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
-        <span class="font-bold">Admin Panel</span>
+        <div class="flex items-center gap-6">
+            <a href="{{ url_for('admin.dashboard') }}" class="font-bold hover:text-gray-300">&larr; Admin</a>
+            <span>Products</span>
+        </div>
         <div class="flex gap-4">
-            <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-300">Dashboard</a>
-            <a href="{{ url_for('admin.orders') }}" class="hover:text-gray-300">Orders</a>
+            <a href="{{ url_for('admin.categories') }}" class="hover:text-gray-300">Categories</a>
             <a href="{{ url_for('admin.logout') }}" class="hover:text-gray-300">Logout</a>
         </div>
     </nav>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="max-w-7xl mx-auto mt-4 px-6">
+        {% for category, message in messages %}
+        <div class="px-4 py-3 rounded-lg mb-2 text-sm {% if category == 'success' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
     <div class="max-w-7xl mx-auto px-6 py-8">
-        <h1 class="text-2xl font-bold mb-6">Products ({{ products|length }})</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">{{ products|length }} Products</h1>
+            <a href="{{ url_for('admin.new_product') }}" class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">+ New Product</a>
+        </div>
         <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">ID</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Name</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Price</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Status</th></tr></thead>
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
                 <tbody class="divide-y divide-gray-100">
                 {% for p in products %}
                 <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm font-mono">{{ p.id }}</td>
-                    <td class="px-6 py-4"><a href="{{ url_for('product.product_detail', slug=p.slug) }}" class="text-sm font-medium text-primary-600 hover:underline">{{ p.name }}</a></td>
-                    <td class="px-6 py-4 text-sm">${{ '%.2f'|format(p.base_price) }}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full {% if p.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{% if p.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                    <td class="px-4 py-3">
+                        <img src="{{ p.image_url or 'https://placehold.co/48x48/e9d5ff/7C3AED' }}" alt="" class="w-12 h-12 object-cover rounded-lg">
+                    </td>
+                    <td class="px-4 py-3">
+                        <a href="{{ url_for('product.product_detail', slug=p.slug) }}" target="_blank" class="text-sm font-medium text-gray-900 hover:text-indigo-600">{{ p.name }}</a>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ p.slug }}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="text-sm font-medium">${{ '%.2f'|format(p.base_price) }}</span>
+                        {% if p.compare_price and p.compare_price > p.base_price %}
+                        <span class="text-xs text-gray-400 line-through ml-1">${{ '%.2f'|format(p.compare_price) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full {% if p.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{% if p.is_active %}Active{% else %}Draft{% endif %}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if p.is_featured %}<span class="text-yellow-500">&#9733;</span>{% else %}<span class="text-gray-300">&#9734;</span>{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="text-sm text-indigo-600 hover:text-indigo-800 mr-3">Edit</a>
+                        <form method="post" action="{{ url_for('admin.remove_product', product_id=p.id) }}" class="inline" onsubmit="return confirm('Delete {{ p.name }}?')">
+                            <button type="submit" class="text-sm text-red-500 hover:text-red-700">Delete</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
                 </tbody>
             </table>
+            {% if not products %}
+            <div class="text-center py-12 text-gray-400">
+                <p>No products yet. <a href="{{ url_for('admin.new_product') }}" class="text-indigo-600 hover:underline">Create your first product</a></p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </body>

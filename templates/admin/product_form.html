@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Edit' if product else 'New' }} Product - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .field { margin-bottom: 1rem; }
+        .field label { display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+        .field input, .field textarea, .field select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.875rem; }
+        .field input:focus, .field textarea:focus, .field select:focus { outline: none; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); border-color: #7C3AED; }
+        .field .hint { font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
+        .field textarea { min-height: 120px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-6">
+            <a href="{{ url_for('admin.dashboard') }}" class="font-bold hover:text-gray-300">&larr; Admin</a>
+            <span>{{ 'Edit Product' if product else 'New Product' }}</span>
+        </div>
+        <a href="{{ url_for('admin.products') }}" class="text-sm hover:text-gray-300">Back to Products</a>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="max-w-4xl mx-auto mt-4">
+        {% for category, message in messages %}
+        <div class="px-4 py-3 rounded-lg mb-2 text-sm {% if category == 'success' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        <form method="post">
+            <!-- Basic Info -->
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Basic Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="field">
+                        <label>Product Name *</label>
+                        <input type="text" name="name" required value="{{ product.name if product else '' }}" placeholder="e.g. Abstract Canvas Wall Art">
+                    </div>
+                    <div class="field">
+                        <label>Slug (URL)</label>
+                        <input type="text" name="slug" value="{{ product.slug if product else '' }}" placeholder="auto-generated-from-name">
+                        <div class="hint">Leave blank to auto-generate from name</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="field">
+                        <label>Selling Price ($) *</label>
+                        <input type="number" step="0.01" min="0" name="base_price" required value="{{ '%.2f'|format(product.base_price) if product else '' }}">
+                    </div>
+                    <div class="field">
+                        <label>Compare at Price ($)</label>
+                        <input type="number" step="0.01" min="0" name="compare_price" value="{{ '%.2f'|format(product.compare_price) if product and product.compare_price else '' }}">
+                        <div class="hint">Original price for discount display</div>
+                    </div>
+                    <div class="field">
+                        <label>Cost Price ($)</label>
+                        <input type="number" step="0.01" min="0" name="cost_price" value="{{ '%.2f'|format(product.cost_price) if product and product.cost_price else '' }}">
+                        <div class="hint">Your cost (not shown to customers)</div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Categories</label>
+                    <div class="flex flex-wrap gap-3 mt-1">
+                        {% for cat in categories %}
+                        <label class="flex items-center gap-1.5 text-sm text-gray-700">
+                            <input type="checkbox" name="categories" value="{{ cat.id }}" {% if product and cat in product.categories %}checked{% endif %}>
+                            {{ cat.name }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Description</h2>
+                <div class="field">
+                    <label>Description (Chinese)</label>
+                    <textarea name="description" rows="6">{{ product.description if product else '' }}</textarea>
+                    <div class="hint">Main description. Use blank lines for paragraphs.</div>
+                </div>
+                <div class="field">
+                    <label>Description (English)</label>
+                    <textarea name="description_en" rows="6">{{ product.description_en if product else '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Images -->
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Images</h2>
+                <div class="field">
+                    <label>Main Image URL *</label>
+                    <input type="url" name="image_url" value="{{ product.image_url if product else '' }}" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="field">
+                    <label>Additional Images</label>
+                    <textarea name="images" rows="4" placeholder="One URL per line">{{ '\n'.join(product.images) if product and product.images else '' }}</textarea>
+                    <div class="hint">One image URL per line. These show in the product gallery.</div>
+                </div>
+                {% if product and product.image_url %}
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500 mb-2">Preview:</p>
+                    <div class="grid grid-cols-4 gap-2">
+                        <img src="{{ product.image_url }}" alt="" class="w-full aspect-square object-cover rounded-lg border">
+                        {% for img in (product.images or [])[:3] %}
+                        <img src="{{ img }}" alt="" class="w-full aspect-square object-cover rounded-lg border">
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Supplier & SEO -->
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Supplier &amp; SEO</h2>
+                <div class="field">
+                    <label>Supplier URL (1688/Taobao)</label>
+                    <input type="url" name="supplier_url" value="{{ product.supplier_url if product else '' }}" placeholder="https://detail.1688.com/...">
+                    <div class="hint">Link to your supplier for easy reordering</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="field">
+                        <label>SEO Title</label>
+                        <input type="text" name="seo_title" value="{{ product.seo_title if product else '' }}" placeholder="Custom title for search engines">
+                    </div>
+                    <div class="field">
+                        <label>SEO Description</label>
+                        <input type="text" name="seo_description" value="{{ product.seo_description if product else '' }}" placeholder="Meta description (max 160 chars)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Status</h2>
+                <div class="flex items-center gap-6">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="is_active" {% if not product or product.is_active %}checked{% endif %}>
+                        Active (visible in store)
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="is_featured" {% if product and product.is_featured %}checked{% endif %}>
+                        Featured (show on homepage)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-4">
+                <button type="submit" class="px-8 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
+                    {{ 'Save Changes' if product else 'Create Product' }}
+                </button>
+                <a href="{{ url_for('admin.products') }}" class="px-6 py-3 text-gray-600 hover:text-gray-800">Cancel</a>
+                {% if product %}
+                <form method="post" action="{{ url_for('admin.remove_product', product_id=product.id) }}" class="ml-auto" onsubmit="return confirm('Delete this product permanently?')">
+                    <button type="submit" class="px-4 py-3 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition">Delete Product</button>
+                </form>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</body>
+</html>

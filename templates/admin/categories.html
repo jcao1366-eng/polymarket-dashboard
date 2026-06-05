@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-6">
+            <a href="{{ url_for('admin.dashboard') }}" class="font-bold hover:text-gray-300">&larr; Admin</a>
+            <span>Categories</span>
+        </div>
+        <a href="{{ url_for('admin.logout') }}" class="hover:text-gray-300">Logout</a>
+    </nav>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="max-w-4xl mx-auto mt-4 px-6">
+        {% for category, message in messages %}
+        <div class="px-4 py-3 rounded-lg mb-2 text-sm {% if category == 'success' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        <h1 class="text-2xl font-bold mb-6">Categories ({{ categories|length }})</h1>
+        <!-- Add new category -->
+        <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+            <h2 class="text-sm font-semibold text-gray-700 mb-4">Add New Category</h2>
+            <form method="post" action="{{ url_for('admin.new_category') }}" class="flex gap-3">
+                <input type="text" name="name" required placeholder="Category name" class="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="text" name="slug" placeholder="slug (auto)" class="w-40 px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button type="submit" class="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Add</button>
+            </form>
+        </div>
+        <!-- Category list -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Name</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Slug</th><th class="px-6 py-3 text-right text-sm font-medium text-gray-500">Actions</th></tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                {% for cat in categories %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ cat.name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 font-mono">{{ cat.slug }}</td>
+                    <td class="px-6 py-4 text-right">
+                        <form method="post" action="{{ url_for('admin.remove_category', cat_id=cat.id) }}" onsubmit="return confirm('Delete {{ cat.name }}?')">
+                            <button type="submit" class="text-sm text-red-500 hover:text-red-700">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

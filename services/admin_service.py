@@ -1,4 +1,4 @@
-from models import Product, ProductVariant, Category, Order, db
+from models import Product, ProductVariant, Category, Order, OrderItem, db
 from flask import current_app
 
 def verify_admin(username, password):
@@ -8,8 +8,21 @@ def verify_admin(username, password):
 def get_orders(page=1, per_page=20):
     return Order.query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
-def get_all_products():
-    return Product.query.order_by(Product.created_at.desc()).all()
+def search_orders(q="", status="", page=1, per_page=20):
+    query = Order.query
+    if status:
+        query = query.filter(Order.status == status)
+    if q:
+        pattern = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Order.order_number.ilike(pattern),
+                Order.email.ilike(pattern),
+                Order.first_name.ilike(pattern),
+                Order.last_name.ilike(pattern),
+            )
+        )
+    return query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
 def update_order_status(order_id, status):
     order = Order.query.get_or_404(order_id)
@@ -17,13 +30,41 @@ def update_order_status(order_id, status):
     db.session.commit()
     return order
 
+def update_order_tracking(order_id, tracking_number):
+    order = Order.query.get_or_404(order_id)
+    order.tracking_number = tracking_number
+    if tracking_number and order.status == "paid":
+        order.status = "shipped"
+    db.session.commit()
+    return order
+
+def get_all_products():
+    return Product.query.order_by(Product.created_at.desc()).all()
+
+def search_products(q="", status=""):
+    query = Product.query
+    if status == "active":
+        query = query.filter(Product.is_active == True)
+    elif status == "draft":
+        query = query.filter(Product.is_active == False)
+    elif status == "featured":
+        query = query.filter(Product.is_featured == True)
+    if q:
+        pattern = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Product.name.ilike(pattern),
+                Product.slug.ilike(pattern),
+            )
+        )
+    return query.order_by(Product.created_at.desc()).all()
+
 def get_product(product_id):
     return Product.query.get_or_404(product_id)
 
 def create_product(data):
     import re
     slug = re.sub(r'[^a-z0-9]+', '-', data.get("slug") or data.get("name", "").lower()).strip("-")
-    # Ensure unique slug
     base_slug = slug
     counter = 1
     while Product.query.filter_by(slug=slug).first():
@@ -45,7 +86,6 @@ def create_product(data):
         seo_title=data.get("seo_title", ""),
         seo_description=data.get("seo_description", ""),
     )
-    # Categories
     if data.get("categories"):
         for cid in data["categories"]:
             cat = Category.query.get(int(cid))
@@ -53,7 +93,6 @@ def create_product(data):
                 p.categories.append(cat)
     db.session.add(p)
     db.session.flush()
-    # Variants
     _save_variants(p, data)
     db.session.commit()
     return p
@@ -130,10 +169,9 @@ def _parse_images(images_str):
     return [url.strip() for url in images_str.strip().split("\n") if url.strip()]
 
 def _save_variants(product, data):
-    # Clear existing if variant_data provided
     if "variant_options" in data:
         ProductVariant.query.filter_by(product_id=product.id).delete()
-        options = data["variant_options"]  # list of dicts: [{name, value, sku, stock, price_modifier}]
+        options = data["variant_options"]
         for opt in options:
             if opt.get("value"):
                 v = ProductVariant(

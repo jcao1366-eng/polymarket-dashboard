@@ -1,86 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Products - Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <nav class="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-6">
-            <a href="{{ url_for('admin.dashboard') }}" class="font-bold hover:text-gray-300">&larr; Admin</a>
-            <span>Products</span>
+{% extends "admin/base.html" %}
+{% block title %}Products{% endblock %}
+{% block mobile_title %}Products{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Products</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ products|length }} products total</p>
         </div>
-        <div class="flex gap-4">
-            <a href="{{ url_for('admin.categories') }}" class="hover:text-gray-300">Categories</a>
-            <a href="{{ url_for('admin.logout') }}" class="hover:text-gray-300">Logout</a>
-        </div>
-    </nav>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="max-w-7xl mx-auto mt-4 px-6">
-        {% for category, message in messages %}
-        <div class="px-4 py-3 rounded-lg mb-2 text-sm {% if category == 'success' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %}">{{ message }}</div>
-        {% endfor %}
+        <a href="{{ url_for('admin.new_product') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New Product
+        </a>
     </div>
-    {% endif %}
-    {% endwith %}
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">{{ products|length }} Products</h1>
-            <a href="{{ url_for('admin.new_product') }}" class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">+ New Product</a>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+
+    <!-- Search Bar -->
+    <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <form method="get" class="flex gap-3">
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="Search products by name or slug..."
+                    class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <select name="status" class="px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">All Status</option>
+                <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Draft</option>
+                <option value="featured" {% if request.args.get('status') == 'featured' %}selected{% endif %}>Featured</option>
+            </select>
+            <button type="submit" class="px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition">Filter</button>
+        </form>
+    </div>
+
+    <!-- Products Table -->
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50/50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Categories</th>
+                        <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                 {% for p in products %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3">
-                        <img src="{{ p.image_url or 'https://placehold.co/48x48/e9d5ff/7C3AED' }}" alt="" class="w-12 h-12 object-cover rounded-lg">
+                <tr class="hover:bg-gray-50/50 transition">
+                    <td class="px-5 py-3.5">
+                        <div class="flex items-center gap-3">
+                            <img src="{{ p.image_url or 'https://placehold.co/48x48/e9d5ff/7C3AED' }}" alt="" class="w-10 h-10 rounded-lg object-cover border border-gray-100">
+                            <div>
+                                <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="text-sm font-medium text-gray-900 hover:text-primary-600 transition">{{ p.name }}</a>
+                                <div class="text-xs text-gray-400 font-mono mt-0.5">/{{ p.slug }}</div>
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-4 py-3">
-                        <a href="{{ url_for('product.product_detail', slug=p.slug) }}" target="_blank" class="text-sm font-medium text-gray-900 hover:text-indigo-600">{{ p.name }}</a>
-                        <div class="text-xs text-gray-400 mt-0.5">{{ p.slug }}</div>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="text-sm font-medium">${{ '%.2f'|format(p.base_price) }}</span>
+                    <td class="px-5 py-3.5">
+                        <span class="text-sm font-semibold text-gray-900">${{ '%.2f'|format(p.base_price) }}</span>
                         {% if p.compare_price and p.compare_price > p.base_price %}
                         <span class="text-xs text-gray-400 line-through ml-1">${{ '%.2f'|format(p.compare_price) }}</span>
+                        <span class="ml-1 text-[10px] font-bold text-green-600 bg-green-50 px-1 py-0.5 rounded">-{{ p.discount_pct }}%</span>
                         {% endif %}
                     </td>
-                    <td class="px-4 py-3">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full {% if p.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{% if p.is_active %}Active{% else %}Draft{% endif %}</span>
+                    <td class="px-5 py-3.5">
+                        <div class="flex flex-col gap-1">
+                            <span class="inline-flex w-fit px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase tracking-wide
+                                {% if p.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{% if p.is_active %}Active{% else %}Draft{% endif %}</span>
+                            {% if p.is_featured %}<span class="inline-flex w-fit px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-50 text-yellow-700">Featured</span>{% endif %}
+                        </div>
                     </td>
-                    <td class="px-4 py-3">
-                        {% if p.is_featured %}<span class="text-yellow-500">&#9733;</span>{% else %}<span class="text-gray-300">&#9734;</span>{% endif %}
+                    <td class="px-5 py-3.5">
+                        <div class="flex flex-wrap gap-1">
+                            {% for cat in p.categories %}
+                            <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{{ cat.name }}</span>
+                            {% endfor %}
+                        </div>
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="text-sm text-indigo-600 hover:text-indigo-800 mr-3">Edit</a>
-                        <form method="post" action="{{ url_for('admin.remove_product', product_id=p.id) }}" class="inline" onsubmit="return confirm('Delete {{ p.name }}?')">
-                            <button type="submit" class="text-sm text-red-500 hover:text-red-700">Delete</button>
-                        </form>
+                    <td class="px-5 py-3.5 text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="Edit">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </a>
+                            <a href="{{ url_for('product.product_detail', slug=p.slug) }}" target="_blank" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View in store">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            </a>
+                            <form method="post" action="{{ url_for('admin.remove_product', product_id=p.id) }}" class="inline" onsubmit="return confirm('Delete {{ p.name }}? This cannot be undone.')">
+                                <button type="submit" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
                 </tbody>
             </table>
-            {% if not products %}
-            <div class="text-center py-12 text-gray-400">
-                <p>No products yet. <a href="{{ url_for('admin.new_product') }}" class="text-indigo-600 hover:underline">Create your first product</a></p>
-            </div>
-            {% endif %}
         </div>
+        {% if not products %}
+        <div class="text-center py-16">
+            <svg class="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <p class="text-gray-500 text-sm mb-2">No products found</p>
+            <a href="{{ url_for('admin.new_product') }}" class="text-sm text-primary-600 hover:text-primary-700 font-medium">Create your first product</a>
+        </div>
+        {% endif %}
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

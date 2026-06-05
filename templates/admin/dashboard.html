@@ -1,62 +1,142 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <nav class="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
-        <span class="font-bold">Creative Finds Admin</span>
-        <div class="flex gap-4 text-sm">
-            <a href="{{ url_for('admin.products') }}" class="hover:text-gray-300">Products</a>
-            <a href="{{ url_for('admin.categories') }}" class="hover:text-gray-300">Categories</a>
-            <a href="{{ url_for('admin.orders') }}" class="hover:text-gray-300">Orders</a>
-            <a href="{{ url_for('admin.logout') }}" class="hover:text-gray-300">Logout</a>
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block mobile_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-sm text-gray-500 mt-1">Welcome back! Here\'s your store overview.</p>
         </div>
-    </nav>
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <h1 class="text-2xl font-bold mb-8">Dashboard</h1>
-        <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-xl p-6 shadow-sm">
-                <div class="text-sm text-gray-500">Total Products</div>
-                <div class="text-3xl font-bold mt-1">{{ total_products }}</div>
-                <a href="{{ url_for('admin.new_product') }}" class="text-sm text-indigo-600 hover:text-indigo-800 mt-2 inline-block">+ Add Product</a>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-sm">
-                <div class="text-sm text-gray-500">Total Orders</div>
-                <div class="text-3xl font-bold mt-1">{{ total_orders }}</div>
-                <a href="{{ url_for('admin.orders') }}" class="text-sm text-indigo-600 hover:text-indigo-800 mt-2 inline-block">View Orders</a>
-            </div>
-            <div class="bg-white rounded-xl p-6 shadow-sm">
-                <div class="text-sm text-gray-500">Quick Actions</div>
-                <div class="mt-3 flex flex-col gap-2">
-                    <a href="{{ url_for('admin.new_product') }}" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 text-center">New Product</a>
-                    <a href="https://polymarket-dashboard-xq1a.onrender.com" target="_blank" class="px-4 py-2 border border-gray-200 text-sm rounded-lg hover:bg-gray-50 text-center">View Store</a>
+        <a href="{{ url_for('admin.new_product') }}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New Product
+        </a>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat-card bg-white rounded-xl p-5 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500">Total Revenue</span>
+                <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
             </div>
+            <div class="mt-3 text-2xl font-bold text-gray-900">${{ '%.2f'|format(total_revenue) }}</div>
+            <div class="text-xs text-gray-400 mt-1">from {{ total_orders }} orders</div>
         </div>
-        <!-- Recent Orders -->
-        {% if recent_orders %}
-        <h2 class="text-lg font-bold mb-4">Recent Orders</h2>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Order</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Email</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Total</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Status</th></tr></thead>
-                <tbody class="divide-y divide-gray-100">
-                {% for order in recent_orders %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 font-mono text-sm">{{ order.order_number }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ order.email }}</td>
-                    <td class="px-6 py-4 font-medium">${{ '%.2f'|format(order.total) }}</td>
-                    <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full {% if order.status == 'paid' %}bg-green-100 text-green-700{% elif order.status == 'shipped' %}bg-blue-100 text-blue-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">{{ order.status }}</span></td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+        <div class="stat-card bg-white rounded-xl p-5 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500">Pending Orders</span>
+                <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+            <div class="mt-3 text-2xl font-bold text-gray-900">{{ pending_orders_count }}</div>
+            <div class="text-xs text-gray-400 mt-1">need attention</div>
         </div>
-        {% endif %}
+        <div class="stat-card bg-white rounded-xl p-5 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500">Products</span>
+                <div class="w-9 h-9 bg-primary-50 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
+            </div>
+            <div class="mt-3 text-2xl font-bold text-gray-900">{{ total_products }}</div>
+            <div class="text-xs text-gray-400 mt-1">{{ active_products }} active</div>
+        </div>
+        <div class="stat-card bg-white rounded-xl p-5 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500">Avg. Order</span>
+                <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                </div>
+            </div>
+            <div class="mt-3 text-2xl font-bold text-gray-900">${{ '%.2f'|format(avg_order) }}</div>
+            <div class="text-xs text-gray-400 mt-1">per order</div>
+        </div>
     </div>
-</body>
-</html>
+
+    <!-- Two columns: Recent Orders + Top Products -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Orders -->
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 class="font-semibold text-gray-900">Recent Orders</h2>
+                <a href="{{ url_for('admin.orders') }}" class="text-sm text-primary-600 hover:text-primary-700 font-medium">View All</a>
+            </div>
+            {% if recent_orders %}
+            <div class="divide-y divide-gray-50">
+                {% for order in recent_orders %}
+                <a href="{{ url_for('admin.order_detail', order_id=order.id) }}" class="flex items-center px-5 py-3.5 hover:bg-gray-50 transition">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-mono font-medium text-gray-900">{{ order.order_number }}</span>
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase tracking-wide
+                                {% if order.status == 'pending' %}bg-amber-100 text-amber-700
+                                {% elif order.status == 'paid' %}bg-green-100 text-green-700
+                                {% elif order.status == 'shipped' %}bg-blue-100 text-blue-700
+                                {% elif order.status == 'delivered' %}bg-gray-100 text-gray-600
+                                {% elif order.status == 'refunded' %}bg-red-100 text-red-700
+                                {% else %}bg-gray-100 text-gray-600{% endif %}">{{ order.status }}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-0.5">{{ order.first_name }} {{ order.last_name }} &middot; {{ order.email }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-semibold text-gray-900">${{ '%.2f'|format(order.total) }}</div>
+                        <div class="text-xs text-gray-400">{{ order.created_at.strftime('%m/%d %H:%M') }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-5 py-12 text-center text-gray-400 text-sm">No orders yet. They\'ll appear here when customers start purchasing.</div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-6">
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl border border-gray-100 p-5">
+                <h2 class="font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                <div class="space-y-2">
+                    <a href="{{ url_for('admin.new_product') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary-50 text-primary-700 text-sm font-medium hover:bg-primary-100 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add New Product
+                    </a>
+                    <a href="{{ url_for('admin.orders', status='pending') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
+                        Process Pending Orders
+                    </a>
+                    <a href="{{ url_for('admin.categories') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+                        Manage Categories
+                    </a>
+                </div>
+            </div>
+
+            <!-- Featured Products -->
+            <div class="bg-white rounded-xl border border-gray-100 p-5">
+                <h2 class="font-semibold text-gray-900 mb-4">Featured Products</h2>
+                {% if featured_products %}
+                <div class="space-y-3">
+                    {% for p in featured_products[:4] %}
+                    <a href="{{ url_for('product.product_detail', slug=p.slug) }}" target="_blank" class="flex items-center gap-3 group">
+                        <img src="{{ p.image_url or 'https://placehold.co/40x40/e9d5ff/7C3AED' }}" alt="" class="w-10 h-10 rounded-lg object-cover">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm text-gray-900 truncate group-hover:text-primary-600 transition">{{ p.name }}</div>
+                            <div class="text-xs text-gray-400">${{ '%.2f'|format(p.base_price) }}</div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400">No featured products yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

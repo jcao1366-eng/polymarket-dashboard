@@ -16,3 +16,4 @@ class Config:
     SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
     SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
     DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY", "USD")
+    GA_MEASUREMENT_ID = os.environ.get("GA_MEASUREMENT_ID", "")

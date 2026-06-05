@@ -129,3 +129,13 @@ class CartItem(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     product = db.relationship("Product")
     variant = db.relationship("ProductVariant")
+
+class PageView(db.Model):
+    __tablename__ = "page_views"
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.String(500), nullable=False, index=True)
+    ip = db.Column(db.String(45), default="")
+    user_agent = db.Column(db.String(500), default="")
+    referrer = db.Column(db.String(500), default="")
+    country = db.Column(db.String(3), default="")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)

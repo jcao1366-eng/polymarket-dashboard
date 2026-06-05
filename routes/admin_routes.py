@@ -44,8 +44,9 @@ def logout():
 @admin_bp.route("/")
 @admin_required
 def dashboard():
-    from models import Product, Order
-    from sqlalchemy import func
+    from models import Product, Order, PageView
+    from sqlalchemy import func, cast, Date
+    from datetime import datetime, timedelta, timezone
 
     total_products = Product.query.count()
     active_products = Product.query.filter(Product.is_active == True).count()
@@ -60,6 +61,41 @@ def dashboard():
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(5).all()
     featured_products = Product.query.filter(Product.is_featured == True).order_by(Product.created_at.desc()).limit(4).all()
 
+    # ─── Analytics: Today's visits ───
+    now_utc = datetime.now(timezone.utc)
+    today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+    yesterday_start = today_start - timedelta(days=1)
+    last_7d_start = today_start - timedelta(days=7)
+
+    today_views = PageView.query.filter(PageView.created_at >= today_start).count()
+    today_unique = PageView.query.filter(PageView.created_at >= today_start).with_entities(func.count(func.distinct(PageView.ip))).scalar() or 0
+    yesterday_views = PageView.query.filter(PageView.created_at >= yesterday_start, PageView.created_at < today_start).count()
+    week_views = PageView.query.filter(PageView.created_at >= last_7d_start).count()
+    week_unique = PageView.query.filter(PageView.created_at >= last_7d_start).with_entities(func.count(func.distinct(PageView.ip))).scalar() or 0
+
+    # Top pages this week
+    top_pages = PageView.query.filter(PageView.created_at >= last_7d_start).with_entities(
+        PageView.path, func.count(PageView.id).label("hits")
+    ).group_by(PageView.path).order_by(func.count(PageView.id).desc()).limit(5).all()
+
+    # Daily trend (last 7 days)
+    daily_trend = []
+    for i in range(6, -1, -1):
+        day_start = today_start - timedelta(days=i)
+        day_end = day_start + timedelta(days=1)
+        day_views = PageView.query.filter(PageView.created_at >= day_start, PageView.created_at < day_end).count()
+        daily_trend.append({
+            "date": day_start.strftime("%m/%d"),
+            "views": day_views,
+        })
+
+    # Countries
+    top_countries = PageView.query.filter(PageView.created_at >= last_7d_start).filter(
+        PageView.country != ""
+    ).with_entities(
+        PageView.country, func.count(PageView.id).label("hits")
+    ).group_by(PageView.country).order_by(func.count(PageView.id).desc()).limit(5).all()
+
     return render_template(
         "admin/dashboard.html",
         active_page="dashboard",
@@ -71,6 +107,15 @@ def dashboard():
         avg_order=avg_order,
         recent_orders=recent_orders,
         featured_products=featured_products,
+        # analytics
+        today_views=today_views,
+        today_unique=today_unique,
+        yesterday_views=yesterday_views,
+        week_views=week_views,
+        week_unique=week_unique,
+        top_pages=top_pages,
+        daily_trend=daily_trend,
+        top_countries=top_countries,
     )
 
 # ─── Orders ───────────────────────────────────────────

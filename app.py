@@ -1,8 +1,9 @@
 import os
 import logging
-from flask import Flask
+import hashlib
+from flask import Flask, request, g
 from config import Config
-from models import db
+from models import db, PageView
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +25,22 @@ def create_app(config_class=Config):
     app.register_blueprint(checkout_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/admin")
+
+    @app.after_request
+    def track_pageview(response):
+        if response.status_code == 200 and not request.path.startswith("/admin") and not request.path.startswith("/api") and not request.path.startswith("/static"):
+            try:
+                ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+                ua = request.headers.get("User-Agent", "")[:500]
+                ref = request.referrer[:500] if request.referrer else ""
+                country = request.headers.get("CF-IPCountry", "")
+                if app.config.get("SQLALCHEMY_DATABASE_URI"):
+                    pv = PageView(path=request.path, ip=ip, user_agent=ua, referrer=ref, country=country)
+                    db.session.add(pv)
+                    db.session.commit()
+            except Exception:
+                pass
+        return response
 
     with app.app_context():
         db.create_all()

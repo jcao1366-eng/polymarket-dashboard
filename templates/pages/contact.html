@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Contact Us | {{ config.STORE_NAME }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h1 class="text-4xl font-bold text-gray-900 mb-6">Contact Us</h1>
+    <p class="text-gray-600 mb-8">Have a question? We'd love to hear from you.</p>
+    <form class="space-y-6" onsubmit="event.preventDefault(); alert('Message sent! We will reply within 24 hours.');">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input type="text" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea rows="5" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
+        </div>
+        <button type="submit" class="w-full py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition">Send Message</button>
+    </form>
+</div>
+{% endblock %}

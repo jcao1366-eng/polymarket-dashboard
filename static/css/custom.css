@@ -1,0 +1,40 @@
+/* Custom brand styles */
+:root {
+    --primary: #7C3AED;
+    --primary-light: #a78bfa;
+    --primary-dark: #5b21b6;
+}
+
+html { scroll-behavior: smooth; }
+
+/* Smooth page transitions */
+main { animation: fadeIn 0.3s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Focus styles */
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+/* Cart badge animation */
+#cart-badge { transition: transform 0.2s; }
+#cart-badge.bump { animation: bump 0.3s; }
+@keyframes bump { 0%,100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+
+/* Product image hover zoom */
+.product-card img { transition: transform 0.5s ease; }
+.product-card:hover img { transform: scale(1.05); }
+
+/* Toast notification */
+.toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #7C3AED; color: white;
+    padding: 12px 20px; border-radius: 12px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.5s forwards;
+    z-index: 9999;
+}
+@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; transform: translateY(10px); } }

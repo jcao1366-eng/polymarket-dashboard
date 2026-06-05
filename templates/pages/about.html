@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}About Us | {{ config.STORE_NAME }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h1 class="text-4xl font-bold text-gray-900 mb-6">About {{ config.STORE_NAME }}</h1>
+    <div class="prose prose-lg text-gray-600 max-w-none space-y-6">
+        <p>We believe everyone deserves access to unique, high-quality products without breaking the bank. That's why we scour the globe to find the best products and bring them directly to you.</p>
+        <h2 class="text-2xl font-bold text-gray-900">Our Mission</h2>
+        <p>To make premium products accessible to everyone through fair pricing and exceptional service. We work directly with manufacturers to eliminate middlemen and pass the savings to you.</p>
+        <h2 class="text-2xl font-bold text-gray-900">Quality Promise</h2>
+        <p>Every product in our store is hand-selected and quality-checked. If you're not satisfied, we offer hassle-free 30-day returns.</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
+        <span class="font-bold">Admin Panel</span>
+        <div class="flex gap-4">
+            <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-300">Dashboard</a>
+            <a href="{{ url_for('admin.orders') }}" class="hover:text-gray-300">Orders</a>
+            <a href="{{ url_for('admin.logout') }}" class="hover:text-gray-300">Logout</a>
+        </div>
+    </nav>
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <h1 class="text-2xl font-bold mb-6">Products ({{ products|length }})</h1>
+        <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">ID</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Name</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Price</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Status</th></tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                {% for p in products %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-mono">{{ p.id }}</td>
+                    <td class="px-6 py-4"><a href="{{ url_for('product.product_detail', slug=p.slug) }}" class="text-sm font-medium text-primary-600 hover:underline">{{ p.name }}</a></td>
+                    <td class="px-6 py-4 text-sm">${{ '%.2f'|format(p.base_price) }}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full {% if p.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">{% if p.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

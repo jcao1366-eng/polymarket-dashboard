@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Products {% if category_name %}— {{ category_name }}{% endif %} | {{ config.STORE_NAME }}{% endblock %}
+{% import "components/product_card.html" as cards %}
+{% import "components/pagination.html" as pg %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ category_name or 'All Products' }}</h1>
+            <p class="mt-1 text-gray-500">{{ products.total }} products found</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <select name="sort" class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" onchange="location.href='{{ url_for('product.product_list') }}?sort='+this.value+'&category={{ category_slug }}'">
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+            </select>
+            {% if categories %}
+            <select id="cat-select" class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" onchange="var v=this.value; location.href=v ? '{{ url_for("product.category_products", slug="SLUG") }}'.replace('SLUG',v) : '{{ url_for("product.product_list") }}'">
+                <option value="">All Categories</option>
+                {% for c in categories %}
+                <option value="{{ c.slug }}" {% if c.slug == category_slug %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+        </div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        {% for product in products.items %}
+            {{ cards.product_card(product) }}
+        {% else %}
+            <div class="col-span-full text-center py-16 text-gray-400">
+                <p class="text-lg">No products found</p>
+            </div>
+        {% endfor %}
+    </div>
+    {{ pg.paginate(products) }}
+</div>
+{% endblock %}

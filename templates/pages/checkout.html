@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Checkout | {{ config.STORE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+    <form action="{{ url_for('checkout.create') }}" method="post" class="space-y-6">
+        <input type="hidden" name="currency" value="{{ currency }}">
+        <!-- Email -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" name="email" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="your@email.com">
+        </div>
+        <!-- Order Summary -->
+        <div class="bg-gray-50 rounded-xl p-6">
+            <h2 class="font-semibold text-gray-900 mb-4">Order Summary</h2>
+            <div class="flex justify-between text-lg font-bold text-gray-900">
+                <span>Total</span>
+                <span>{{ format_price(total, currency) }}</span>
+            </div>
+        </div>
+        <!-- Stripe Notice -->
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700">
+            You will be redirected to Stripe's secure payment page to complete your purchase.
+        </div>
+        <button type="submit" class="w-full py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition shadow-lg shadow-primary-500/25">
+            Pay {{ format_price(total, currency) }}
+        </button>
+        <div class="flex justify-center gap-4 text-gray-400 text-sm">
+            <span>Credit Card</span>
+            <span>Apple Pay</span>
+            <span>Google Pay</span>
+        </div>
+    </form>
+</div>
+{% endblock %}

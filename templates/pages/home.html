@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ config.STORE_NAME }} — Unique Products, Great Prices{% endblock %}
+{% import "components/product_card.html" as cards %}
+
+{% block content %}
+<!-- Hero -->
+<section class="relative bg-gradient-to-br from-primary-50 via-white to-purple-50 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+        <div class="max-w-2xl">
+            <h1 class="text-4xl md:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
+                Discover Products<br>You'll <span class="text-primary-600">Love</span>
+            </h1>
+            <p class="mt-6 text-lg text-gray-600 leading-relaxed">Curated collection of unique, high-quality products. Free worldwide shipping on orders over $50.</p>
+            <div class="mt-8 flex flex-wrap gap-4">
+                <a href="{{ url_for('product.product_list') }}" class="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition shadow-lg shadow-primary-500/25">Shop Now</a>
+                <a href="{{ url_for('main.about') }}" class="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">Learn More</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories -->
+{% if categories %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h2 class="text-2xl font-bold text-gray-900 mb-8">Shop by Category</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {% for cat in categories %}
+        <a href="{{ url_for('product.category_products', slug=cat.slug) }}" class="group relative rounded-2xl overflow-hidden aspect-[4/3] bg-gray-100">
+            <img src="{{ cat.image_url or 'https://placehold.co/400x300/e9d5ff/7C3AED?text=' + cat.name }}" alt="{{ cat.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+            <h3 class="absolute bottom-4 left-4 text-white font-semibold text-lg">{{ cat.name }}</h3>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Featured Products -->
+{% if featured %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-bold text-gray-900">Featured Products</h2>
+        <a href="{{ url_for('product.product_list') }}" class="text-sm font-medium text-primary-600 hover:text-primary-700 transition">View All &rarr;</a>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        {% for product in featured %}
+            {{ cards.product_card(product) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Trust badges -->
+<section class="bg-gray-50 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+                <div class="text-3xl font-bold text-primary-600">Free Shipping</div>
+                <p class="mt-1 text-sm text-gray-500">On orders over $50</p>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-primary-600">30-Day Returns</div>
+                <p class="mt-1 text-sm text-gray-500">Hassle-free returns</p>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-primary-600">Secure Payment</div>
+                <p class="mt-1 text-sm text-gray-500">Stripe protected</p>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-primary-600">24/7 Support</div>
+                <p class="mt-1 text-sm text-gray-500">Always here to help</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

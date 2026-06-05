@@ -1,0 +1,7 @@
+{
+    "nav": { "shop": "All Products", "about": "About", "contact": "Contact", "search": "Search..." },
+    "home": { "title": "Discover Products You'll Love", "subtitle": "Curated collection of unique, high-quality products.", "cta": "Shop Now", "featured": "Featured Products", "categories": "Shop by Category" },
+    "cart": { "title": "Shopping Cart", "empty": "Your cart is empty", "subtotal": "Subtotal", "shipping": "Shipping", "total": "Total", "checkout": "Proceed to Checkout", "continue": "Continue Shopping" },
+    "product": { "add_to_cart": "Add to Cart", "qty": "Quantity", "variants": "Variants", "free_shipping": "Free shipping on orders over $50", "returns": "30-day hassle-free returns", "secure": "Secure checkout with Stripe" },
+    "footer": { "rights": "All rights reserved" }
+}

@@ -1,3 +1,7 @@
 flask>=3.0
-requests>=2.31
+flask-sqlalchemy>=3.1
+psycopg2-binary>=2.9
+stripe>=10.0
 gunicorn>=21.2
+requests>=2.31
+python-dotenv>=1.0

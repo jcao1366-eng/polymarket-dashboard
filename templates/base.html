@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ config.STORE_NAME }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_desc %}Discover unique products at great prices. Free shipping worldwide.{% endblock %}">
+    <meta property="og:title" content="{{ self.title() }}">
+    <meta property="og:description" content="{{ self.meta_desc() }}">
+    <meta property="og:type" content="website">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: { 50:'#f5f3ff', 100:'#ede9fe', 200:'#ddd6fe', 300:'#c4b5fd', 400:'#a78bfa', 500:'#7C3AED', 600:'#6d28d9', 700:'#5b21b6', 800:'#4c1d95', 900:'#3b0764' },
+                },
+                fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+            }
+        }
+    }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="font-sans text-gray-800 bg-white">
+    {% include "components/navbar.html" %}
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+    {% include "components/footer.html" %}
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

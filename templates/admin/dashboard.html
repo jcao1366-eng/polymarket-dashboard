@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
+        <span class="font-bold">Admin Panel</span>
+        <div class="flex gap-4">
+            <a href="{{ url_for('admin.orders') }}" class="hover:text-gray-300">Orders</a>
+            <a href="{{ url_for('admin.products') }}" class="hover:text-gray-300">Products</a>
+            <a href="{{ url_for('admin.logout') }}" class="hover:text-gray-300">Logout</a>
+        </div>
+    </nav>
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 shadow-sm"><h3 class="text-sm text-gray-500">Total Orders</h3><p class="text-3xl font-bold mt-2">{{ orders.total }}</p></div>
+            <div class="bg-white rounded-xl p-6 shadow-sm"><h3 class="text-sm text-gray-500">Total Products</h3><p class="text-3xl font-bold mt-2">{{ products|length }}</p></div>
+            <div class="bg-white rounded-xl p-6 shadow-sm"><h3 class="text-sm text-gray-500">Revenue</h3><p class="text-3xl font-bold mt-2">$0.00</p></div>
+        </div>
+        <h2 class="text-xl font-bold mb-4">Recent Orders</h2>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Order</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Email</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Total</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Status</th><th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Date</th></tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                {% for order in orders.items %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 font-mono text-sm">{{ order.order_number }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">{{ order.email }}</td>
+                    <td class="px-6 py-4 font-medium">${{ '%.2f'|format(order.total) }}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full {% if order.status == 'paid' %}bg-green-100 text-green-700{% elif order.status == 'shipped' %}bg-blue-100 text-blue-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">{{ order.status }}</span></td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ order.created_at.strftime('%Y-%m-%d') if order.created_at else '' }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

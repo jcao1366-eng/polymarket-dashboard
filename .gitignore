@@ -1,40 +1,23 @@
-# Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-
-# Virtual environments
-venv/
-env/
+*.pyc
 .env
-
-# Logs
-logs/*.log
-logs/access.jsonl
-cloudflared.log
-tunnel.log
-
-# PIDs
+*.db
+dist/
+legacy/
+*.zip
 .pids/
-
-# Tunnel files
-.tunnel_url
-.tunnel_token
-.cloudflared-credentials.json
-
-# OS
-.DS_Store
-Thumbs.db
-*.exe
-!cloudflared.exe
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Config (keep local)
+logs/
+cloudflared.exe
+bin/
+gh.zip
+nul
+web/
+src/
+start.bat
+start.sh
 config.yml
+tunnel_manager.py
+proxy_server.py
+web_server.py
+generate_code.py
+generate_store.py

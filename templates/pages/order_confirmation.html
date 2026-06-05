@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed | {{ config.STORE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    </div>
+    <h1 class="text-3xl font-bold text-gray-900">Order Confirmed!</h1>
+    <p class="mt-4 text-gray-600">Thank you for your purchase. A confirmation email has been sent.</p>
+    {% if order %}
+    <div class="mt-8 bg-gray-50 rounded-xl p-6 text-left space-y-2">
+        <div class="flex justify-between"><span class="text-gray-500">Order Number</span><span class="font-mono font-bold">{{ order.order_number }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Total</span><span class="font-bold">${{ '%.2f'|format(order.total) }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Status</span><span class="text-green-600 font-medium">{{ order.status }}</span></div>
+    </div>
+    {% endif %}
+    <a href="{{ url_for('product.product_list') }}" class="mt-8 inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition">Continue Shopping</a>
+</div>
+{% endblock %}

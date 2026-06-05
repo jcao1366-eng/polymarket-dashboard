@@ -1,0 +1,35 @@
+<footer class="bg-gray-900 text-gray-300 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4">{{ config.STORE_NAME }}</h3>
+                <p class="text-sm text-gray-400">Curating unique products for the modern lifestyle. Quality you can trust, prices you'll love.</p>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-4">Shop</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="{{ url_for('product.product_list') }}" class="hover:text-primary-400 transition">All Products</a></li>
+                    <li><a href="{{ url_for('main.home') }}" class="hover:text-primary-400 transition">Featured</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-4">Company</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="{{ url_for('main.about') }}" class="hover:text-primary-400 transition">About Us</a></li>
+                    <li><a href="{{ url_for('main.contact') }}" class="hover:text-primary-400 transition">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-4">Legal</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="{{ url_for('main.privacy') }}" class="hover:text-primary-400 transition">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('main.terms') }}" class="hover:text-primary-400 transition">Terms of Service</a></li>
+                    <li><a href="{{ url_for('main.refund_policy') }}" class="hover:text-primary-400 transition">Refund Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500">
+            &copy; {{ now.year if now else 2026 }} {{ config.STORE_NAME }}. All rights reserved.
+        </div>
+    </div>
+</footer>
